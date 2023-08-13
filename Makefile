@@ -13,4 +13,7 @@ migrateup:
 migratedown:
 	soda migrate down -p ./db/migrations -c ./db/database.yml
 
-.PHONY: postgres createdb dropdb migrateup migratedown
+sqlc:
+	docker run --rm -v "${CURDIR}:/src" -w /src kjconroy/sqlc generate
+
+.PHONY: postgres createdb dropdb migrateup migratedown sqlc
