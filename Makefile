@@ -17,7 +17,8 @@ sqlc:
 	docker run --rm -v "${CURDIR}:/src" -w /src kjconroy/sqlc generate
 
 test:
-	go test -v -cover -coverprofile cover.out -outputdir ./covers/ ./...
-	go tool cover -html ./covers/cover.out -o ./covers/cover.html
+	go test -v -cover -short ./...
+	# go test -v -cover -coverprofile cover.out -outputdir ./covers/ ./...
+	# go tool cover -html ./covers/cover.out -o ./covers/cover.html
 
 .PHONY: postgres createdb dropdb migrateup migratedown sqlc test
