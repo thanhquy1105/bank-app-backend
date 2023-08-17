@@ -21,4 +21,7 @@ test:
 	# go test -v -cover -coverprofile cover.out -outputdir ./covers/ ./...
 	# go tool cover -html ./covers/cover.out -o ./covers/cover.html
 
+server:
+	go run main.go
+
 .PHONY: postgres createdb dropdb migrateup migratedown sqlc test
