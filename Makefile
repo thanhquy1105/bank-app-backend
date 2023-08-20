@@ -13,6 +13,9 @@ migrateup:
 migratedown:
 	soda migrate down -p ./db/migrations -c ./db/database.yml
 
+migratedown1:
+	soda migrate down -p ./db/migrations -c ./db/database.yml --step 1
+
 sqlc:
 	docker run --rm -v "${CURDIR}:/src" -w /src kjconroy/sqlc generate
 
