@@ -11,7 +11,7 @@ import (
 	"github.com/thanhquy1105/simplebank/util"
 )
 
-func NewTestServer(t *testing.T, store db.Store) *Server {
+func newTestServer(t *testing.T, store db.Store) *Server {
 	config := util.Config{
 		TokenSymmetricKey:   util.RandomString(32),
 		AccessTokenDuration: time.Minute,
