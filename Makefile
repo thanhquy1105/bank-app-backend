@@ -5,7 +5,7 @@ connectdb:
 	docker network connect bank-network postgres
 
 postgres:
-	docker run --name postgres --network bank-network -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=secret -d postgres
+	docker run --name postgres --network bank-network -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=secret -d postgres:13.12
 
 createdb:
 	docker exec -it postgres createdb --username=root --owner=root simple_bank
@@ -17,7 +17,7 @@ migrateup:
 	soda migrate -p ./db/migrations -c ./db/database.yml
 
 migratedown:
-	soda migrate down -p ./db/migrations -c ./db/database.yml
+	soda migrate down -p ./db/migrations -c ./db/database.yml --step 2
 
 migratedown1:
 	soda migrate down -p ./db/migrations -c ./db/database.yml --step 1
