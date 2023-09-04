@@ -13,6 +13,11 @@ jobs:
     name: Build image
     runs-on: ubuntu-latest
 
+    # These permissions are needed to interact with GitHub's OIDC Token endpoint.
+    permissions:
+      id-token: write
+      contents: read
+
     steps:
     - name: Check out code
       uses: actions/checkout@v3
