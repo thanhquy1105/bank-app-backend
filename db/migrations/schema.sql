@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 13.12 (Debian 13.12-1.pgdg120+1)
+-- Dumped from database version 12.13
 -- Dumped by pg_dump version 13.3
 
 SET statement_timeout = 0;
@@ -317,6 +317,16 @@ ALTER TABLE ONLY public.transfers
 
 ALTER TABLE ONLY public.transfers
     ADD CONSTRAINT transfers_to_account_id_fkey FOREIGN KEY (to_account_id) REFERENCES public.accounts(id);
+
+
+--
+-- Name: SCHEMA public; Type: ACL; Schema: -; Owner: root
+--
+
+REVOKE ALL ON SCHEMA public FROM rdsadmin;
+REVOKE ALL ON SCHEMA public FROM PUBLIC;
+GRANT ALL ON SCHEMA public TO root;
+GRANT ALL ON SCHEMA public TO PUBLIC;
 
 
 --
