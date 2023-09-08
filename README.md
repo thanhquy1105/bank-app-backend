@@ -11,3 +11,10 @@ The service that we’re going to build is a simple bank. It will provide APIs f
 
 ## Database
 https://dbdiagram.io/d/64d78c4802bd1c4a5eabec0b
+
+## Clone
+It should use a Unix-style line endings instead of Windows. This problem occurs some errors when running sh file in docker.
+You should run the following command before cloning the repository:
+
+```git config --global core.autocrlf false```
+Then clone the repository and proceed.
