@@ -18,3 +18,10 @@ You should run the following command before cloning the repository:
 
 ```git config --global core.autocrlf false```
 Then clone the repository and proceed.
+
+## To run this simple bank project
+There are 3 ways written in Makefile to run the project
+
+- RUN SIMPLE_BANK USING POSTGRES CONTAINER AND ```make server``` TO START SERVER
+- RUN SIMPLE_BANK USING DOCKER NETWORK TO CONNECT 2 STAND-ALONE CONTAINERS (postgres container + app container + network)
+- RUN SIMPLE_BANK USING DOCKER COMPOSE 
