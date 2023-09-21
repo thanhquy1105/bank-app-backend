@@ -58,6 +58,9 @@ createdb:
 dropdb:
 	docker exec -it postgres dropdb simple_bank
 
+# create a new db migration
+# soda generate -c ./db/database.yml -p ./db/migrations sql <migration_name>
+
 # migrate simple_bank database from app to postgres container
 migrateup:
 	soda migrate -p ./db/migrations -c ./db/database.yml
@@ -72,7 +75,7 @@ migratedown1:
 
 # generate queries to golang code
 sqlc:
-	docker run --rm -v "${CURDIR}:/src" -w /src kjconroy/sqlc generate
+	docker run --rm -v "${CURDIR}:/src" -w /src sqlc/sqlc:1.20.0 generate
 
 # run test
 test:

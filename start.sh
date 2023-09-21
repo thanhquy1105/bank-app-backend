@@ -4,7 +4,7 @@ set -e
 
 echo "run db migration"
 
-# awk -F "=" -v var=$DB_SOURCE '{if (match($0,/DB_SOURCE/)) {print $1"="var} else {print $0}}' app.env1 > app.env1
+# awk -F "=" -v var=$DB_SOURCE '{if (match($0,/DB_SOURCE/)) {print $1"="var} else {print $0}}' app.env > app.env1
 if [[ -z "${DB_SOURCE}" ]]; then
     echo "none"
     source /app/app.env
