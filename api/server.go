@@ -11,7 +11,7 @@ import (
 	"github.com/thanhquy1105/simplebank/util"
 )
 
-// Server serves HTTP requests for out banking service.
+// Server serves HTTP requests for our banking service.
 type Server struct {
 	config     util.Config
 	store      db.Store
