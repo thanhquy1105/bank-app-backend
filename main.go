@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"database/sql"
+	"embed"
+	"io/fs"
 	"log"
 	"net"
 	"net/http"
@@ -18,6 +20,9 @@ import (
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/encoding/protojson"
 )
+
+//go:embed doc/swagger/*
+var staticAssets embed.FS
 
 func main() {
 	config, err := util.LoadConfig(".")
@@ -84,6 +89,9 @@ func runGatewayServer(config util.Config, store db.Store) {
 
 	mux := http.NewServeMux()
 	mux.Handle("/", grpcMux)
+
+	assets, _ := fs.Sub(staticAssets, "doc")
+	mux.Handle("/swagger/", http.FileServer(http.FS(assets)))
 
 	listener, err := net.Listen("tcp", config.HTTPServerAddress)
 	if err != nil {
