@@ -21,21 +21,17 @@ func (server *Server) authorizeUser(ctx context.Context) (*token.Payload, error)
 	}
 
 	values := md.Get(authorizationHeader)
-	fmt.Println(values)
 	if len(values) == 0 {
 		return nil, fmt.Errorf("missing authorization header")
 	}
 
 	authHeader := values[0]
-	fmt.Println(authHeader)
 	fields := strings.Fields(authHeader)
-	fmt.Println(fields)
 	if len(fields) < 2 {
 		return nil, fmt.Errorf("invalid authorization header format")
 	}
 
 	authType := strings.ToLower(fields[0])
-	fmt.Println(authType)
 	if authType != authorizationBearer {
 		return nil, fmt.Errorf("unsupported authorization type: %s", authType)
 	}
