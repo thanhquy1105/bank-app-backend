@@ -109,4 +109,7 @@ proto:
 evans:
 	evans --host localhost -p 9090 -r repl
 
-.PHONY: postgres createdb dropdb migrateup migratedown sqlc test proto evans
+redis:
+	docker run --name redis -p 6379:6379 -d redis:7.2.1
+
+.PHONY: postgres createdb dropdb migrateup migratedown sqlc test proto evans redis
