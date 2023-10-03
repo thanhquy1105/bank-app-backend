@@ -73,6 +73,14 @@ migratedown:
 migratedown1:
 	soda migrate down -p ./db/migrations -c ./db/database.yml --step 1
 
+# build database document
+db_docs:
+	dbdocs build doc/db.dbml
+
+# build database schema
+db_schema:
+	dbml2sql --postgres -o doc/schema.sql doc/db.dbml
+
 # generate queries to golang code
 sqlc:
 	docker run --rm -v "${CURDIR}:/src" -w /src sqlc/sqlc:1.20.0 generate
@@ -112,4 +120,4 @@ evans:
 redis:
 	docker run --name redis -p 6379:6379 -d redis:7.2.1
 
-.PHONY: postgres createdb dropdb migrateup migratedown sqlc test proto evans redis
+.PHONY: postgres createdb dropdb migrateup migratedown sqlc test proto evans redis db_docs db_schema
