@@ -67,11 +67,15 @@ migrateup:
 
 # migrate all down simple_bank database from app to postgres container
 migratedown:
-	soda migrate down -p ./db/migrations -c ./db/database.yml --step 2
+	soda migrate down -p ./db/migrations -c ./db/database.yml --step 4
 
 # migrate 1 down simple_bank database from app to postgres container
 migratedown1:
 	soda migrate down -p ./db/migrations -c ./db/database.yml --step 1
+
+# generate a new migration
+new_migration:
+	soda generate sql -p ./db/migrations -c ./db/database.yml $(name)
 
 # build database document
 db_docs:
@@ -120,4 +124,4 @@ evans:
 redis:
 	docker run --name redis -p 6379:6379 -d redis:7.2.1
 
-.PHONY: postgres createdb dropdb migrateup migratedown sqlc test proto evans redis db_docs db_schema
+.PHONY: postgres createdb dropdb migrateup migratedown sqlc test proto evans redis db_docs db_schema new_migration
