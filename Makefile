@@ -66,7 +66,7 @@ migrateup:
 	soda migrate -p ./db/migrations -c ./db/database.yml
 
 # migrate all down simple_bank database from app to postgres container
-migratedown:
+migratedownall:
 	soda migrate down -p ./db/migrations -c ./db/database.yml --step 4
 
 # migrate 1 down simple_bank database from app to postgres container
