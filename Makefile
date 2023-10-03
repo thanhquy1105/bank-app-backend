@@ -1,4 +1,4 @@
-# 1. RUN SIMPLE_BANK USING POSTGRES CONTAINER AND `make server`
+# 1. RUN SIMPLE_BANK USING POSTGRES CONTAINER AND REDIS CONTAINER AND `make server`
 # 1.1 run postgres
 postgres:
 	docker run --name postgres -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=secret -d postgres:13.12
@@ -9,7 +9,10 @@ postgres:
 # 1.3 migrate simple_bank db
 #	make migrateup
 
-# 1.4 run server
+# 1.4 run redis
+#	make redis
+
+# 1.5 run server
 # 	make server
 
 # 2. RUN SIMPLE_BANK USING DOCKER NETWORK TO CONNECT 2 STAND-ALONE CONTAINERS 
@@ -31,9 +34,13 @@ postgreswithnetwork:
 build:
 	docker build -t simplebank:latest .
 
-# 2.6 run app with network 
+# 2.6 run redis container with network
+rediswithnetwork:
+	docker run --name redis --network bank-network -p 6379:6379 -d redis:7.2.1
+
+# 2.7 run app with network 
 appwithnetwork:
-	docker run --name simplebank --network bank-network -p 8080:8080 -e GIN_MODE=release -e DB_SOURCE="postgresql://root:secret@postgres:5432/simple_bank?sslmode=disable" simplebank:latest
+	docker run --name simplebank --network bank-network -p 8080:8080 -e GIN_MODE=release -e REDIS_ADDRESS="redis:6379" -e DB_SOURCE="postgresql://root:secret@postgres:5432/simple_bank?sslmode=disable" simplebank:latest
 
 # (optional) connect postgres container with network if not yet
 connectdb:
