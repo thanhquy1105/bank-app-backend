@@ -23,7 +23,6 @@ Table verify_emails {
   expired_at timestamptz [not null, default: `now() + interval '15 minutes'`]
 }
 
-
 Table accounts as A {
   id bigserial [pk]
   owner varchar [ref: > U.username, not null]
