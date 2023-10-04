@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/lib/pq"
 	"github.com/stretchr/testify/require"
 	mockdb "github.com/thanhquy1105/simplebank/db/mock"
 	db "github.com/thanhquy1105/simplebank/db/sqlc"
@@ -89,7 +88,7 @@ func TestGetAccountAPI(t *testing.T) {
 				store.EXPECT().
 					GetAccount(gomock.Any(), gomock.Eq(account.ID)).
 					Times(1).
-					Return(db.Account{}, sql.ErrNoRows)
+					Return(db.Account{}, db.ErrRecordNotFound)
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusNotFound, recorder.Code)
@@ -229,7 +228,7 @@ func TestCreateAccountAPI(t *testing.T) {
 			},
 		},
 		{
-			name: "UniqueViolation",
+			name: "DuplicateAccount",
 			body: gin.H{
 				"currency": account.Currency,
 			},
@@ -237,14 +236,10 @@ func TestCreateAccountAPI(t *testing.T) {
 				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.Username, time.Minute)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
-				var errCode = &pq.Error{
-					Code: "23505", // unique_violation errorcode
-				}
-
 				store.EXPECT().
 					CreateAccount(gomock.Any(), gomock.Any()).
 					Times(1).
-					Return(db.Account{}, errCode)
+					Return(db.Account{}, db.ErrUniqueViolation)
 			},
 			checkResponse: func(recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusForbidden, recorder.Code)
