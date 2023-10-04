@@ -108,6 +108,7 @@ server:
 # generate gomock for testing
 mock:
 	mockgen -package mockdb -destination db/mock/store.go github.com/thanhquy1105/simplebank/db/sqlc Store
+	mockgen -package mockwk -destination worker/mock/distributor.go github.com/thanhquy1105/simplebank/worker TaskDistributor
 
 proto:
 

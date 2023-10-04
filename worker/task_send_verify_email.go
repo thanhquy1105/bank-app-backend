@@ -35,7 +35,7 @@ func (distributor *RedisTaskDistributor) DistributeTaskSendVerifyEmail(
 	}
 
 	log.Info().Str("type", task.Type()).Bytes("payload", task.Payload()).
-		Str("queue", info.Queue).Int("max_retry", info.MaxRetry).Msg("enqueuetask")
+		Str("queue", info.Queue).Int("max_retry", info.MaxRetry).Msg("enqueue task")
 
 	return nil
 }
