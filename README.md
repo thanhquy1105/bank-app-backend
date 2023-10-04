@@ -1,5 +1,5 @@
 # simplebank
-Golang, Gin, Docker, K8s, gRPC, Redis, Postgres
+Golang, Gin, GoMock, Postgres, Docker, K8s, gRPC, gRPC-Gateway, Redis
 
 ## Simple bank service
 
@@ -22,6 +22,6 @@ Then clone the repository and proceed.
 ## To run this simple bank project
 There are 3 ways written in Makefile to run the project
 
-- RUN SIMPLE_BANK USING POSTGRES CONTAINER AND REDIS CONTAINER AND ```make server``` TO START SERVER
-- RUN SIMPLE_BANK USING DOCKER NETWORK TO CONNECT 3 STAND-ALONE CONTAINERS (postgres container + redis container + app container + network)
-- RUN SIMPLE_BANK USING DOCKER COMPOSE UP
+- Run SimpleBank using POSTGRES CONTAINER && REDIS CONTAINER && ```make server``` to start server
+- Run SimpleBank using DOCKER NETWORK to connect 3 STAND-ALONE CONTAINERS (postgres container + redis container + app container)
+- Run SimpleBank using DOCKER COMPOSE UP
