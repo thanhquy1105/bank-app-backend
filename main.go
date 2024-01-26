@@ -7,6 +7,8 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/hibiken/asynq"
@@ -27,6 +29,12 @@ import (
 
 //go:embed doc/swagger/*
 var staticAssets embed.FS
+var (
+	gServer         net.Listener
+	gGateway        net.Listener
+	taskDistributor worker.TaskDistributor
+	taskProcessor   worker.TaskProcessor
+)
 
 func main() {
 	config, err := util.LoadConfig(".")
@@ -48,7 +56,10 @@ func main() {
 	redisOpt := asynq.RedisClientOpt{
 		Addr: config.RedisAddress,
 	}
-	taskDistributor := worker.NewRedisTaskDistributor(redisOpt)
+	taskDistributor = worker.NewRedisTaskDistributor(redisOpt)
+
+	// listen for signals
+	go listenForShutdown()
 
 	// runGinServer(config, store)
 	go runTaskProcessor(config, redisOpt, store)
@@ -58,7 +69,7 @@ func main() {
 
 func runTaskProcessor(config util.Config, redisOpt asynq.RedisClientOpt, store db.Store) {
 	mailer := mail.NewGmailSender(config.EmailSenderName, config.EmailSenderAddress, config.EmailSenderPassword)
-	taskProcessor := worker.NewRedisTaskProcessor(redisOpt, store, mailer)
+	taskProcessor = worker.NewRedisTaskProcessor(redisOpt, store, mailer)
 	log.Info().Msg("start task processor")
 	err := taskProcessor.Start()
 	if err != nil {
@@ -83,6 +94,7 @@ func runGrpcServer(config util.Config, store db.Store, taskDistributor worker.Ta
 	if err != nil {
 		log.Fatal().Msg("cannot create listener")
 	}
+	gServer = listener
 
 	log.Info().Msgf("start gRPC server at %s", listener.Addr().String())
 	err = grpcServer.Serve(listener)
@@ -125,6 +137,7 @@ func runGatewayServer(config util.Config, store db.Store, taskDistributor worker
 	if err != nil {
 		log.Fatal().Msg("cannot create listener")
 	}
+	gGateway = listener
 
 	log.Info().Msgf("start HTTP gateway server at %s", listener.Addr().String())
 	handler := gapi.HttpLogger(mux)
@@ -132,6 +145,28 @@ func runGatewayServer(config util.Config, store db.Store, taskDistributor worker
 	if err != nil {
 		log.Fatal().Msg("cannot start HTTP gateway server")
 	}
+}
+
+func listenForShutdown() {
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	log.Info().Msg("closing channels and shutting down application...")
+
+	log.Info().Msg("Close another connection")
+	taskDistributor.Close()
+	taskProcessor.Shutdown()
+
+	log.Info().Msg("Stop grpc server and http gateway server")
+	err := gServer.Close()
+	err1 := gGateway.Close()
+
+	if err != nil || err1 != nil {
+		log.Error().Msg("Stop grpc server and http gateway server")
+	}
+	close(quit)
+	os.Exit(0)
 }
 
 func runGinServer(config util.Config, store db.Store) {

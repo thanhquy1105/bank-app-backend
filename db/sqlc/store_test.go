@@ -140,6 +140,7 @@ func TestTransferTxDeadlock(t *testing.T) {
 			})
 
 			errs <- err
+			close(errs)
 		}()
 
 	}

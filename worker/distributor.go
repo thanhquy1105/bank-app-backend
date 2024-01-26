@@ -7,6 +7,7 @@ import (
 )
 
 type TaskDistributor interface {
+	Close()
 	DistributeTaskSendVerifyEmail(
 		ctx context.Context,
 		payload *PayloadSendVerifyEmail,
@@ -23,4 +24,8 @@ func NewRedisTaskDistributor(redisOpt asynq.RedisClientOpt) TaskDistributor {
 	return &RedisTaskDistributor{
 		client: client,
 	}
+}
+
+func (taskDistributor *RedisTaskDistributor) Close() {
+	taskDistributor.client.Close()
 }
