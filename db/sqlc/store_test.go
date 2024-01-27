@@ -101,6 +101,9 @@ func TestTransferTx(t *testing.T) {
 
 	}
 
+	close(errs)
+	close(results)
+
 	// check the final updated balances
 	updateAccount1, err := testStore.GetAccount(context.Background(), account1.ID)
 	require.NoError(t, err)
@@ -140,7 +143,6 @@ func TestTransferTxDeadlock(t *testing.T) {
 			})
 
 			errs <- err
-			close(errs)
 		}()
 
 	}
@@ -151,6 +153,7 @@ func TestTransferTxDeadlock(t *testing.T) {
 		require.NoError(t, err)
 
 	}
+	close(errs)
 
 	// check the final updated balances
 	updateAccount1, err := testStore.GetAccount(context.Background(), account1.ID)

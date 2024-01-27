@@ -19,7 +19,7 @@ type Config struct {
 	RefreshTokenDuration time.Duration `mapstructure:"REFRESH_TOKEN_DURATION"`
 	EmailSenderName      string        `mapstructure:"EMAIL_SENDER_NAME"`
 	EmailSenderAddress   string        `mapstructure:"EMAIL_SENDER_ADDRESS"`
-	EmailSenderPassword  string        `mapstructure:"Email_SENDER_PASSWORD"`
+	EmailSenderPassword  string        `mapstructure:"EMAIL_SENDER_PASSWORD"`
 }
 
 // LoadConfig reads configuration from file or environment variable.
