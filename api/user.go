@@ -2,13 +2,20 @@ package api
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/hibiken/asynq"
+	"github.com/jackc/pgx/v5/pgtype"
 	db "github.com/thanhquy1105/simplebank/db/sqlc"
+	"github.com/thanhquy1105/simplebank/gapi"
+	"github.com/thanhquy1105/simplebank/token"
 	"github.com/thanhquy1105/simplebank/util"
+	"github.com/thanhquy1105/simplebank/val"
+	"github.com/thanhquy1105/simplebank/worker"
 )
 
 type createUserRequest struct {
@@ -49,14 +56,27 @@ func (server *Server) createUser(ctx *gin.Context) {
 		return
 	}
 
-	arg := db.CreateUserParams{
-		Username:       req.Username,
-		HashedPassword: hashedPassword,
-		FullName:       req.FullName,
-		Email:          req.Email,
+	arg := db.CreateUserTxParams{
+		CreateUserParams: db.CreateUserParams{
+			Username:       req.Username,
+			HashedPassword: hashedPassword,
+			FullName:       req.FullName,
+			Email:          req.Email,
+		},
+		AfterCreate: func(user db.User) error {
+			taskPayload := &worker.PayloadSendVerifyEmail{
+				Username: user.Username,
+			}
+			opts := []asynq.Option{
+				asynq.MaxRetry(10),
+				asynq.ProcessIn(10 * time.Second),
+				asynq.Queue(worker.QueueCritical),
+			}
+			return server.taskDistributor.DistributeTaskSendVerifyEmail(ctx, taskPayload, opts...)
+		},
 	}
 
-	user, err := server.store.CreateUser(ctx, arg)
+	txResult, err := server.store.CreateUserTx(ctx, arg)
 	if err != nil {
 		if db.ErrorCode(err) == db.UniqueViolation {
 			ctx.JSON(http.StatusForbidden, errorResponse(err))
@@ -66,7 +86,7 @@ func (server *Server) createUser(ctx *gin.Context) {
 		return
 	}
 
-	res := newUserResponse(user)
+	res := newUserResponse(txResult.User)
 	ctx.JSON(http.StatusOK, res)
 }
 
@@ -147,5 +167,90 @@ func (server *Server) loginUser(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, res)
+}
 
+type updateUserRequest struct {
+	Username string `json:"username" binding:"required,alphanum"`
+	FullName string `json:"full_name"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+type updateUserResponse struct {
+	User userResponse `json:"user"`
+}
+
+func (server *Server) updateUser(ctx *gin.Context) {
+	var req updateUserRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	if req.Password != "" {
+		if err := val.ValidatePassword(req.Password); err != nil {
+			ctx.JSON(http.StatusBadRequest, errorResponse(fmt.Errorf("password must contain from 6-100 characters")))
+			return
+		}
+	}
+	if req.Email != "" {
+		if err := val.ValidateEmail(req.Email); err != nil {
+			ctx.JSON(http.StatusBadRequest, errorResponse(err))
+			return
+		}
+	}
+
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+	if !gapi.HasPermission(authPayload.Role, []string{util.BankerRole, util.DepositorRole}) {
+		ctx.JSON(http.StatusUnauthorized, errorResponse(fmt.Errorf("permission dinied")))
+		return
+	}
+	if authPayload.Role != util.BankerRole && authPayload.Username != req.Username {
+		ctx.JSON(http.StatusBadRequest, errorResponse(fmt.Errorf("permission dinied")))
+	}
+
+	arg := db.UpdateUserParams{
+		Username: req.Username,
+		FullName: pgtype.Text{
+			String: req.FullName,
+			Valid:  req.FullName != "",
+		},
+		Email: pgtype.Text{
+			String: req.Email,
+			Valid:  req.Email != "",
+		},
+		IsEmailVerified: pgtype.Bool{
+			Bool:  false,
+			Valid: req.Email != "",
+		},
+	}
+
+	if req.Password != "" {
+		hashedPassword, err := util.HashPassword(req.Password)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+			return
+		}
+		arg.HashedPassword = pgtype.Text{
+			String: hashedPassword,
+			Valid:  true,
+		}
+		arg.PasswordChangedAt = pgtype.Timestamptz{
+			Time:  time.Now(),
+			Valid: true,
+		}
+	}
+
+	user, err := server.store.UpdateUser(ctx, arg)
+	if err != nil {
+		if errors.Is(err, db.ErrRecordNotFound) {
+			ctx.JSON(http.StatusNotFound, errorResponse(err))
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+
+	}
+	res := newUserResponse(user)
+	ctx.JSON(http.StatusOK, res)
 }

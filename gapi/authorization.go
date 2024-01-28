@@ -42,14 +42,14 @@ func (server *Server) authorizeUser(ctx context.Context, accessibleRoles []strin
 		return nil, fmt.Errorf("invalid access token: %s", err)
 	}
 
-	if !hasPermission(payload.Role, accessibleRoles) {
+	if !HasPermission(payload.Role, accessibleRoles) {
 		return nil, fmt.Errorf("permission dinied")
 	}
 
 	return payload, nil
 }
 
-func hasPermission(userRole string, accessibleRoles []string) bool {
+func HasPermission(userRole string, accessibleRoles []string) bool {
 	for _, role := range accessibleRoles {
 		if userRole == role {
 			return true

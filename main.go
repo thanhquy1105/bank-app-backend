@@ -59,10 +59,10 @@ func main() {
 	taskDistributor = worker.NewRedisTaskDistributor(redisOpt)
 
 	// listen for signals
-	go listenForShutdown()
+	//go listenForShutdown()
 
-	// runGinServer(config, store)
 	go runTaskProcessor(config, redisOpt, store)
+	//runGinServer(config, store, taskDistributor)
 	go runGatewayServer(config, store, taskDistributor)
 	runGrpcServer(config, store, taskDistributor)
 }
@@ -169,8 +169,8 @@ func listenForShutdown() {
 	os.Exit(0)
 }
 
-func runGinServer(config util.Config, store db.Store) {
-	server, err := api.NewServer(config, store)
+func runGinServer(config util.Config, store db.Store, taskDistributor worker.TaskDistributor) {
+	server, err := api.NewServer(config, store, taskDistributor)
 	if err != nil {
 		log.Fatal().Msg("cannot create server")
 	}

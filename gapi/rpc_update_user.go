@@ -40,6 +40,10 @@ func (server *Server) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest)
 			String: req.GetEmail(),
 			Valid:  req.Email != nil,
 		},
+		IsEmailVerified: pgtype.Bool{
+			Bool:  false,
+			Valid: req.Email != nil,
+		},
 	}
 
 	if req.Password != nil {

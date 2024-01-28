@@ -44,7 +44,7 @@ service SimpleBank {
         description: "Use this API to update user";
         summary: "update user";
       };
-  }
+    }
     rpc LoginUser(LoginUserRequest) returns (LoginUserResponse) {
         option (google.api.http) = {
             post: "/v1/login_user"
