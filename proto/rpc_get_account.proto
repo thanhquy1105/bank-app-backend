@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package pb;
+
+import "account.proto";
+
+option go_package = "github.com/thanhquy1105/simplebank/pb";
+
+message GetAccountRequest {
+    int64 id = 1;
+}
+
+message GetAccountResponse {
+    Account account = 1;
+}

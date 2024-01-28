@@ -16,6 +16,7 @@ import (
 	mockdb "github.com/thanhquy1105/simplebank/db/mock"
 	db "github.com/thanhquy1105/simplebank/db/sqlc"
 	"github.com/thanhquy1105/simplebank/util"
+	"github.com/thanhquy1105/simplebank/worker"
 	mockwk "github.com/thanhquy1105/simplebank/worker/mock"
 	"go.uber.org/mock/gomock"
 )
@@ -23,29 +24,35 @@ import (
 type eqCreateUserTxParamsMatcher struct {
 	arg      db.CreateUserTxParams
 	password string
+	user     db.User
 }
 
-func (e eqCreateUserTxParamsMatcher) Matches(x interface{}) bool {
-	arg, ok := x.(db.CreateUserTxParams)
+func (expected eqCreateUserTxParamsMatcher) Matches(x interface{}) bool {
+	actualArg, ok := x.(db.CreateUserTxParams)
 	if !ok {
 		return false
 	}
 
-	err := util.CheckPassword(e.password, arg.CreateUserParams.HashedPassword)
+	err := util.CheckPassword(expected.password, actualArg.HashedPassword)
 	if err != nil {
 		return false
 	}
 
-	e.arg.CreateUserParams.HashedPassword = arg.CreateUserParams.HashedPassword
-	return reflect.DeepEqual(e.arg.CreateUserParams, arg.CreateUserParams)
+	expected.arg.HashedPassword = actualArg.HashedPassword
+	if !reflect.DeepEqual(expected.arg.CreateUserParams, actualArg.CreateUserParams) {
+		return false
+	}
+
+	err = actualArg.AfterCreate(expected.user)
+	return err == nil
 }
 
 func (e eqCreateUserTxParamsMatcher) String() string {
-	return fmt.Sprintf("matches arg %v and password %v", e.arg.CreateUserParams, e.password)
+	return fmt.Sprintf("matches arg %v and password %v", e.arg, e.password)
 }
 
-func eqCreateUserParams(arg db.CreateUserTxParams, password string) gomock.Matcher {
-	return eqCreateUserTxParamsMatcher{arg, password}
+func eqCreateUserTxParams(arg db.CreateUserTxParams, password string, user db.User) gomock.Matcher {
+	return eqCreateUserTxParamsMatcher{arg, password, user}
 }
 
 func TestCreateUserAPI(t *testing.T) {
@@ -54,7 +61,7 @@ func TestCreateUserAPI(t *testing.T) {
 	testCases := []struct {
 		name          string
 		body          gin.H
-		buildStubs    func(store *mockdb.MockStore)
+		buildStubs    func(store *mockdb.MockStore, taskDistributor *mockwk.MockTaskDistributor)
 		checkResponse func(recorder *httptest.ResponseRecorder)
 	}{
 		{
@@ -65,24 +72,27 @@ func TestCreateUserAPI(t *testing.T) {
 				"full_name": user.FullName,
 				"email":     user.Email,
 			},
-			buildStubs: func(store *mockdb.MockStore) {
+			buildStubs: func(store *mockdb.MockStore, taskDistributor *mockwk.MockTaskDistributor) {
 				arg := db.CreateUserTxParams{
 					CreateUserParams: db.CreateUserParams{
 						Username: user.Username,
 						FullName: user.FullName,
 						Email:    user.Email,
 					},
-					AfterCreate: func(user db.User) error {
-						return nil
-					},
-				}
-				res := db.CreateUserTxResult{
-					User: user,
 				}
 				store.EXPECT().
-					CreateUserTx(gomock.Any(), eqCreateUserParams(arg, password)).
+					CreateUserTx(gomock.Any(), eqCreateUserTxParams(arg, password, user)).
 					Times(1).
-					Return(res, nil)
+					Return(db.CreateUserTxResult{User: user}, nil)
+
+				taskPayload := &worker.PayloadSendVerifyEmail{
+					Username: user.Username,
+				}
+
+				taskDistributor.EXPECT().
+					DistributeTaskSendVerifyEmail(gomock.Any(), taskPayload, gomock.Any()).
+					Times(1).
+					Return(nil)
 			},
 			checkResponse: func(recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusOK, recorder.Code)
@@ -97,7 +107,7 @@ func TestCreateUserAPI(t *testing.T) {
 				"full_name": user.FullName,
 				"email":     user.Email,
 			},
-			buildStubs: func(store *mockdb.MockStore) {
+			buildStubs: func(store *mockdb.MockStore, taskDistributor *mockwk.MockTaskDistributor) {
 				store.EXPECT().
 					CreateUserTx(gomock.Any(), gomock.Any()).
 					Times(1).
@@ -115,7 +125,7 @@ func TestCreateUserAPI(t *testing.T) {
 				"full_name": user.FullName,
 				"email":     user.Email,
 			},
-			buildStubs: func(store *mockdb.MockStore) {
+			buildStubs: func(store *mockdb.MockStore, taskDistributor *mockwk.MockTaskDistributor) {
 				store.EXPECT().
 					CreateUserTx(gomock.Any(), gomock.Any()).
 					Times(0)
@@ -133,7 +143,7 @@ func TestCreateUserAPI(t *testing.T) {
 				"full_name": user.FullName,
 				"email":     user.Email,
 			},
-			buildStubs: func(store *mockdb.MockStore) {
+			buildStubs: func(store *mockdb.MockStore, taskDistributor *mockwk.MockTaskDistributor) {
 				store.EXPECT().
 					CreateUserTx(gomock.Any(), gomock.Any()).
 					Times(1).
@@ -151,7 +161,7 @@ func TestCreateUserAPI(t *testing.T) {
 				"full_name": user.FullName,
 				"email":     "invalid-email",
 			},
-			buildStubs: func(store *mockdb.MockStore) {
+			buildStubs: func(store *mockdb.MockStore, taskDistributor *mockwk.MockTaskDistributor) {
 				store.EXPECT().
 					CreateUserTx(gomock.Any(), gomock.Any()).
 					Times(0)
@@ -168,7 +178,7 @@ func TestCreateUserAPI(t *testing.T) {
 				"full_name": user.FullName,
 				"email":     user.Email,
 			},
-			buildStubs: func(store *mockdb.MockStore) {
+			buildStubs: func(store *mockdb.MockStore, taskDistributor *mockwk.MockTaskDistributor) {
 				store.EXPECT().
 					CreateUserTx(gomock.Any(), gomock.Any()).
 					Times(0)
@@ -185,16 +195,14 @@ func TestCreateUserAPI(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			ctrl1 := gomock.NewController(t)
 			defer ctrl1.Finish()
-
 			store := mockdb.NewMockStore(ctrl1)
-
-			// build stubs
-			tc.buildStubs(store)
 
 			ctrl2 := gomock.NewController(t)
 			defer ctrl2.Finish()
-
 			distributor := mockwk.NewMockTaskDistributor(ctrl2)
+
+			// build stubs
+			tc.buildStubs(store, distributor)
 
 			// start test server and send request
 			server := newTestServer(t, store, distributor)

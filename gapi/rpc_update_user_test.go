@@ -49,6 +49,10 @@ func TestUpdateUserAPI(t *testing.T) {
 						String: newEmail,
 						Valid:  true,
 					},
+					IsEmailVerified: pgtype.Bool{
+						Bool:  false,
+						Valid: true,
+					},
 				}
 				updatedUser := db.User{
 					Username:          user.Username,

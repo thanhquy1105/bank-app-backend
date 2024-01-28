@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package pb;
+
+import "account.proto";
+
+option go_package = "github.com/thanhquy1105/simplebank/pb";
+
+message AccountListRequest {
+    int32 page_id = 1;
+    int32 page_size = 2;
+}
+
+message AccountListResponse {
+    repeated Account accounts = 1;
+}
