@@ -25,7 +25,6 @@ func (server *Server) createTransfer(ctx *gin.Context) {
 	}
 
 	fromAccount, valid := server.validAccount(ctx, req.FromAccountID, req.Currency)
-
 	if !valid {
 		return
 	}

@@ -43,7 +43,7 @@ func (server *Server) authorizeUser(ctx context.Context, accessibleRoles []strin
 	}
 
 	if !HasPermission(payload.Role, accessibleRoles) {
-		return nil, fmt.Errorf("permission dinied")
+		return nil, fmt.Errorf("permission denied")
 	}
 
 	return payload, nil

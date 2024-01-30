@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package pb;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/thanhquy1105/simplebank/pb";
+
+message Entry {
+    int64 id = 1;
+    int64 account_id = 2;
+    int64 amount = 3;
+    google.protobuf.Timestamp created_at = 4;
+}

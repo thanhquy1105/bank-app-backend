@@ -19,13 +19,15 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	SimpleBank_CreateUser_FullMethodName    = "/pb.SimpleBank/CreateUser"
-	SimpleBank_UpdateUser_FullMethodName    = "/pb.SimpleBank/UpdateUser"
-	SimpleBank_LoginUser_FullMethodName     = "/pb.SimpleBank/LoginUser"
-	SimpleBank_VerifyEmail_FullMethodName   = "/pb.SimpleBank/VerifyEmail"
-	SimpleBank_CreateAccount_FullMethodName = "/pb.SimpleBank/CreateAccount"
-	SimpleBank_GetAccount_FullMethodName    = "/pb.SimpleBank/GetAccount"
-	SimpleBank_AccountList_FullMethodName   = "/pb.SimpleBank/AccountList"
+	SimpleBank_CreateUser_FullMethodName       = "/pb.SimpleBank/CreateUser"
+	SimpleBank_UpdateUser_FullMethodName       = "/pb.SimpleBank/UpdateUser"
+	SimpleBank_LoginUser_FullMethodName        = "/pb.SimpleBank/LoginUser"
+	SimpleBank_RenewAccessToken_FullMethodName = "/pb.SimpleBank/RenewAccessToken"
+	SimpleBank_VerifyEmail_FullMethodName      = "/pb.SimpleBank/VerifyEmail"
+	SimpleBank_CreateAccount_FullMethodName    = "/pb.SimpleBank/CreateAccount"
+	SimpleBank_GetAccount_FullMethodName       = "/pb.SimpleBank/GetAccount"
+	SimpleBank_AccountList_FullMethodName      = "/pb.SimpleBank/AccountList"
+	SimpleBank_Transfer_FullMethodName         = "/pb.SimpleBank/Transfer"
 )
 
 // SimpleBankClient is the client API for SimpleBank service.
@@ -35,10 +37,12 @@ type SimpleBankClient interface {
 	CreateUser(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*CreateUserResponse, error)
 	UpdateUser(ctx context.Context, in *UpdateUserRequest, opts ...grpc.CallOption) (*UpdateUserResponse, error)
 	LoginUser(ctx context.Context, in *LoginUserRequest, opts ...grpc.CallOption) (*LoginUserResponse, error)
+	RenewAccessToken(ctx context.Context, in *RenewAccessTokenRequest, opts ...grpc.CallOption) (*RenewAccessTokenResponse, error)
 	VerifyEmail(ctx context.Context, in *VerifyEmailRequest, opts ...grpc.CallOption) (*VerifyEmailResponse, error)
 	CreateAccount(ctx context.Context, in *CreateAccountRequest, opts ...grpc.CallOption) (*CreateAccountResponse, error)
 	GetAccount(ctx context.Context, in *GetAccountRequest, opts ...grpc.CallOption) (*GetAccountResponse, error)
 	AccountList(ctx context.Context, in *AccountListRequest, opts ...grpc.CallOption) (*AccountListResponse, error)
+	Transfer(ctx context.Context, in *TransferRequest, opts ...grpc.CallOption) (*TransferResponse, error)
 }
 
 type simpleBankClient struct {
@@ -70,6 +74,15 @@ func (c *simpleBankClient) UpdateUser(ctx context.Context, in *UpdateUserRequest
 func (c *simpleBankClient) LoginUser(ctx context.Context, in *LoginUserRequest, opts ...grpc.CallOption) (*LoginUserResponse, error) {
 	out := new(LoginUserResponse)
 	err := c.cc.Invoke(ctx, SimpleBank_LoginUser_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *simpleBankClient) RenewAccessToken(ctx context.Context, in *RenewAccessTokenRequest, opts ...grpc.CallOption) (*RenewAccessTokenResponse, error) {
+	out := new(RenewAccessTokenResponse)
+	err := c.cc.Invoke(ctx, SimpleBank_RenewAccessToken_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -112,6 +125,15 @@ func (c *simpleBankClient) AccountList(ctx context.Context, in *AccountListReque
 	return out, nil
 }
 
+func (c *simpleBankClient) Transfer(ctx context.Context, in *TransferRequest, opts ...grpc.CallOption) (*TransferResponse, error) {
+	out := new(TransferResponse)
+	err := c.cc.Invoke(ctx, SimpleBank_Transfer_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SimpleBankServer is the server API for SimpleBank service.
 // All implementations must embed UnimplementedSimpleBankServer
 // for forward compatibility
@@ -119,10 +141,12 @@ type SimpleBankServer interface {
 	CreateUser(context.Context, *CreateUserRequest) (*CreateUserResponse, error)
 	UpdateUser(context.Context, *UpdateUserRequest) (*UpdateUserResponse, error)
 	LoginUser(context.Context, *LoginUserRequest) (*LoginUserResponse, error)
+	RenewAccessToken(context.Context, *RenewAccessTokenRequest) (*RenewAccessTokenResponse, error)
 	VerifyEmail(context.Context, *VerifyEmailRequest) (*VerifyEmailResponse, error)
 	CreateAccount(context.Context, *CreateAccountRequest) (*CreateAccountResponse, error)
 	GetAccount(context.Context, *GetAccountRequest) (*GetAccountResponse, error)
 	AccountList(context.Context, *AccountListRequest) (*AccountListResponse, error)
+	Transfer(context.Context, *TransferRequest) (*TransferResponse, error)
 	mustEmbedUnimplementedSimpleBankServer()
 }
 
@@ -139,6 +163,9 @@ func (UnimplementedSimpleBankServer) UpdateUser(context.Context, *UpdateUserRequ
 func (UnimplementedSimpleBankServer) LoginUser(context.Context, *LoginUserRequest) (*LoginUserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LoginUser not implemented")
 }
+func (UnimplementedSimpleBankServer) RenewAccessToken(context.Context, *RenewAccessTokenRequest) (*RenewAccessTokenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RenewAccessToken not implemented")
+}
 func (UnimplementedSimpleBankServer) VerifyEmail(context.Context, *VerifyEmailRequest) (*VerifyEmailResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method VerifyEmail not implemented")
 }
@@ -150,6 +177,9 @@ func (UnimplementedSimpleBankServer) GetAccount(context.Context, *GetAccountRequ
 }
 func (UnimplementedSimpleBankServer) AccountList(context.Context, *AccountListRequest) (*AccountListResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AccountList not implemented")
+}
+func (UnimplementedSimpleBankServer) Transfer(context.Context, *TransferRequest) (*TransferResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Transfer not implemented")
 }
 func (UnimplementedSimpleBankServer) mustEmbedUnimplementedSimpleBankServer() {}
 
@@ -214,6 +244,24 @@ func _SimpleBank_LoginUser_Handler(srv interface{}, ctx context.Context, dec fun
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SimpleBankServer).LoginUser(ctx, req.(*LoginUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SimpleBank_RenewAccessToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RenewAccessTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SimpleBankServer).RenewAccessToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SimpleBank_RenewAccessToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SimpleBankServer).RenewAccessToken(ctx, req.(*RenewAccessTokenRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -290,6 +338,24 @@ func _SimpleBank_AccountList_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SimpleBank_Transfer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TransferRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SimpleBankServer).Transfer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SimpleBank_Transfer_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SimpleBankServer).Transfer(ctx, req.(*TransferRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SimpleBank_ServiceDesc is the grpc.ServiceDesc for SimpleBank service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -310,6 +376,10 @@ var SimpleBank_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _SimpleBank_LoginUser_Handler,
 		},
 		{
+			MethodName: "RenewAccessToken",
+			Handler:    _SimpleBank_RenewAccessToken_Handler,
+		},
+		{
 			MethodName: "VerifyEmail",
 			Handler:    _SimpleBank_VerifyEmail_Handler,
 		},
@@ -324,6 +394,10 @@ var SimpleBank_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AccountList",
 			Handler:    _SimpleBank_AccountList_Handler,
+		},
+		{
+			MethodName: "Transfer",
+			Handler:    _SimpleBank_Transfer_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

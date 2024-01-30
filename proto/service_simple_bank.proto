@@ -10,6 +10,8 @@ import "rpc_account_list.proto";
 import "rpc_update_user.proto";
 import "rpc_login_user.proto";
 import "rpc_verify_email.proto";
+import "rpc_renew_access_token.proto";
+import "rpc_transfer.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
 
 option go_package = "github.com/thanhquy1105/simplebank/pb";
@@ -29,19 +31,19 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 
 service SimpleBank {
   rpc CreateUser(CreateUserRequest) returns (CreateUserResponse) {
-      option (google.api.http) = {
-          post: "/v1/create_user"
-          body: "*"
-      };
-      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-          description: "Use this API to create a new user";
-          summary: "Create new user";
-      };
+    option (google.api.http) = {
+      post: "/v1/create_user"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      description: "Use this API to create a new user";
+      summary: "Create new user";
+    };
   }
   rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse) {
     option (google.api.http) = {
-        patch: "/v1/update_user"
-        body: "*"
+      patch: "/v1/update_user"
+      body: "*"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       description: "Use this API to update user";
@@ -49,18 +51,28 @@ service SimpleBank {
     };
   }
   rpc LoginUser(LoginUserRequest) returns (LoginUserResponse) {
-      option (google.api.http) = {
-          post: "/v1/login_user"
-          body: "*"
-      };
-      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-        description: "Use this API to login user and get access token & refresh token";
-        summary: "Login user";
-      };
+    option (google.api.http) = {
+      post: "/v1/login_user"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      description: "Use this API to login user and get access token & refresh token";
+      summary: "Login user";
+    };
+  }
+  rpc RenewAccessToken(RenewAccessTokenRequest) returns (RenewAccessTokenResponse) {
+    option (google.api.http) = {
+      post: "/v1/renew_access"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      description: "Use this API to renew access token";
+      summary: "Renew access token";
+    };
   }
   rpc VerifyEmail(VerifyEmailRequest) returns (VerifyEmailResponse) {
     option (google.api.http) = {
-        get: "/v1/verify_email"
+      get: "/v1/verify_email"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       description: "Use this API to verify user's email address";
@@ -69,17 +81,17 @@ service SimpleBank {
   }
   rpc CreateAccount(CreateAccountRequest) returns (CreateAccountResponse) {
     option (google.api.http) = {
-        post: "/v1/create_account"
-        body: "*"
+      post: "/v1/create_account"
+      body: "*"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-        description: "Use this API to create a new account";
-        summary: "Create new account";
+      description: "Use this API to create a new account";
+      summary: "Create new account";
     };
   }
   rpc GetAccount(GetAccountRequest) returns (GetAccountResponse) {
     option (google.api.http) = {
-        get: "/v1/get_account"
+      get: "/v1/get_account"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       description: "Use this API to get a user's account";
@@ -88,11 +100,21 @@ service SimpleBank {
   }
   rpc AccountList(AccountListRequest) returns (AccountListResponse) {
     option (google.api.http) = {
-        get: "/v1/accounts"
+      get: "/v1/accounts"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       description: "Use this API to get user's account list";
       summary: "Get account list";
+    };
+  }
+  rpc Transfer(TransferRequest) returns (TransferResponse) {
+    option (google.api.http) = {
+      post: "/v1/transfer"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      description: "Use this API to transfer amount between 2 accounts";
+      summary: "Transfer amount";
     };
   }
 }
