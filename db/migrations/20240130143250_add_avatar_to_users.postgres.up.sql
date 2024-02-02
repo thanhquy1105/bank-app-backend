@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "avatar" varchar NOT NULL DEFAULT 'https://cdn-icons-png.flaticon.com/512/3541/3541871.png';

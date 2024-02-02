@@ -182,7 +182,8 @@ CREATE TABLE public.users (
     password_changed_at timestamp with time zone DEFAULT '0001-01-01 00:00:00+00'::timestamp with time zone NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     is_email_verified boolean DEFAULT false NOT NULL,
-    role character varying DEFAULT 'depositor'::character varying NOT NULL
+    role character varying DEFAULT 'depositor'::character varying NOT NULL,
+    avatar character varying DEFAULT 'https://cdn-icons-png.flaticon.com/512/3541/3541871.png'::character varying NOT NULL
 );
 
 
