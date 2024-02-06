@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"embed"
+	"fmt"
 	"io/fs"
 	"net"
 	"net/http"
@@ -19,6 +20,8 @@ import (
 	db "github.com/thanhquy1105/simplebank/db/sqlc"
 	"github.com/thanhquy1105/simplebank/gapi"
 	"github.com/thanhquy1105/simplebank/mail"
+	"github.com/thanhquy1105/simplebank/media"
+	_ "github.com/thanhquy1105/simplebank/media/s3"
 	"github.com/thanhquy1105/simplebank/pb"
 	"github.com/thanhquy1105/simplebank/util"
 	"github.com/thanhquy1105/simplebank/worker"
@@ -30,6 +33,7 @@ import (
 //go:embed doc/swagger/*
 var staticAssets embed.FS
 var (
+	ginServer       *api.Server
 	gServer         net.Listener
 	gGateway        net.Listener
 	taskDistributor worker.TaskDistributor
@@ -58,13 +62,23 @@ func main() {
 	}
 	taskDistributor = worker.NewRedisTaskDistributor(redisOpt)
 
+	mediaConfig, err := util.LoadMediaConfig(".")
+	if err != nil {
+		log.Fatal().Msg(fmt.Sprintln("cannot load media config", err))
+	}
+
+	media, err := media.UseMediaHandler(mediaConfig)
+	if err != nil {
+		log.Fatal().Msg(fmt.Sprintln("Failed to init media handler: ", err))
+	}
+
 	// listen for signals
-	//go listenForShutdown()
+	// go listenForShutdown()
 
 	go runTaskProcessor(config, redisOpt, store)
-	//runGinServer(config, store, taskDistributor)
-	go runGatewayServer(config, store, taskDistributor)
-	runGrpcServer(config, store, taskDistributor)
+	runGinServer(config, store, media, taskDistributor)
+	// go runGatewayServer(config, store, taskDistributor)
+	// runGrpcServer(config, store, taskDistributor)
 }
 
 func runTaskProcessor(config util.Config, redisOpt asynq.RedisClientOpt, store db.Store) {
@@ -98,7 +112,7 @@ func runGrpcServer(config util.Config, store db.Store, taskDistributor worker.Ta
 
 	log.Info().Msgf("start gRPC server at %s", listener.Addr().String())
 	err = grpcServer.Serve(listener)
-	if err != nil {
+	if err != nil && err != http.ErrServerClosed {
 		log.Fatal().Msg("cannot start gRPC server")
 	}
 }
@@ -143,7 +157,7 @@ func runGatewayServer(config util.Config, store db.Store, taskDistributor worker
 	log.Info().Msgf("start HTTP gateway server at %s", listener.Addr().String())
 	handler := gapi.HttpLogger(mux)
 	err = http.Serve(listener, handler)
-	if err != nil {
+	if err != nil && err != http.ErrServerClosed {
 		log.Fatal().Msg("cannot start HTTP gateway server")
 	}
 }
@@ -160,24 +174,25 @@ func listenForShutdown() {
 	taskProcessor.Shutdown()
 
 	log.Info().Msg("Stop grpc server and http gateway server")
-	err := gServer.Close()
-	err1 := gGateway.Close()
 
-	if err != nil || err1 != nil {
-		log.Error().Msg("Stop grpc server and http gateway server")
-	}
+	//err := gServer.Close()
+	//err1 := gGateway.Close()
+	// if err != nil || err1 != nil {
+	// 	log.Error().Msg("Stop grpc server and http gateway server")
+	// }
+
 	close(quit)
 	os.Exit(0)
 }
 
-func runGinServer(config util.Config, store db.Store, taskDistributor worker.TaskDistributor) {
-	server, err := api.NewServer(config, store, taskDistributor)
+func runGinServer(config util.Config, store db.Store, media media.Handler, taskDistributor worker.TaskDistributor) {
+	ginServer, err := api.NewServer(config, store, media, taskDistributor)
 	if err != nil {
 		log.Fatal().Msg("cannot create server")
 	}
 
-	err = server.Start(config.HTTPServerAddress)
-	if err != nil {
+	err = ginServer.Start(config.HTTPServerAddress)
+	if err != nil && err != http.ErrServerClosed {
 		log.Fatal().Msg("cannot start server")
 	}
 }

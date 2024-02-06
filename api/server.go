@@ -2,11 +2,13 @@ package api
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
 	db "github.com/thanhquy1105/simplebank/db/sqlc"
+	"github.com/thanhquy1105/simplebank/media"
 	"github.com/thanhquy1105/simplebank/token"
 	"github.com/thanhquy1105/simplebank/util"
 	"github.com/thanhquy1105/simplebank/worker"
@@ -19,10 +21,11 @@ type Server struct {
 	tokenMaker      token.Maker
 	taskDistributor worker.TaskDistributor
 	router          *gin.Engine
+	media           media.Handler
 }
 
 // NewServer creates a new HTTP server and setup routing.
-func NewServer(config util.Config, store db.Store, taskDistributor worker.TaskDistributor) (*Server, error) {
+func NewServer(config util.Config, store db.Store, media media.Handler, taskDistributor worker.TaskDistributor) (*Server, error) {
 	tokenMaker, err := token.NewPasetoMaker(config.TokenSymmetricKey)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create token maker: %w", err)
@@ -33,6 +36,7 @@ func NewServer(config util.Config, store db.Store, taskDistributor worker.TaskDi
 		store:           store,
 		tokenMaker:      tokenMaker,
 		taskDistributor: taskDistributor,
+		media:           media,
 	}
 
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
@@ -53,6 +57,7 @@ func (server *Server) setupRouter() {
 
 	authRoutes := router.Group("/").Use(authMiddleware(server.tokenMaker))
 	authRoutes.POST("/users/update", server.updateUser)
+	authRoutes.POST("/users/avatar", server.updateAvatar)
 
 	authRoutes.POST("/accounts", server.createAccount)
 	authRoutes.GET("/accounts/:id", server.getAccount)
@@ -65,7 +70,11 @@ func (server *Server) setupRouter() {
 
 // Start runs the HTTP server on a specific address
 func (server *Server) Start(address string) error {
-	return server.router.Run(address)
+	srv := &http.Server{
+		Addr:    address,
+		Handler: server.router,
+	}
+	return srv.ListenAndServe()
 }
 
 func errorResponse(err error) gin.H {

@@ -3,7 +3,10 @@ package api
 import (
 	"errors"
 	"fmt"
+	"mime/multipart"
 	"net/http"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -253,4 +256,45 @@ func (server *Server) updateUser(ctx *gin.Context) {
 	}
 	res := newUserResponse(user)
 	ctx.JSON(http.StatusOK, res)
+}
+
+func (server *Server) updateAvatar(ctx *gin.Context) {
+
+	file, fileHeader, err := ctx.Request.FormFile("avatar")
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(fmt.Errorf("get form err: %s", err)))
+		return
+	}
+	fileExt := filepath.Ext(fileHeader.Filename)
+	filename := strings.Split(filepath.Base(fileHeader.Filename), ".")[0]
+	now := time.Now()
+	filename = strings.ReplaceAll(strings.ToLower(filename), " ", "-") + "-" + fmt.Sprintf("%v", now.Unix()) + fileExt
+
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+
+	arg := db.UpdateAvatarTxParams{
+		Username: authPayload.Username,
+		Filename: filename,
+		File:     file,
+		UploadAvatar: func(file multipart.File, filename string) (string, error) {
+			location, _, err := server.media.Upload(filename, file)
+			if err != nil {
+				return "", err
+			}
+			return location, nil
+		},
+	}
+
+	txResult, err := server.store.UpdateAvatarTx(ctx, arg)
+	if err != nil {
+		if errors.Is(err, db.ErrRecordNotFound) {
+			ctx.JSON(http.StatusNotFound, errorResponse(err))
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, txResult)
+
 }
