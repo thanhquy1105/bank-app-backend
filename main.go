@@ -75,15 +75,15 @@ func main() {
 	// listen for signals
 	// go listenForShutdown()
 
-	go runTaskProcessor(config, redisOpt, store)
+	go runTaskProcessor(config, redisOpt, store, media)
 	runGinServer(config, store, media, taskDistributor)
 	// go runGatewayServer(config, store, taskDistributor)
 	// runGrpcServer(config, store, taskDistributor)
 }
 
-func runTaskProcessor(config util.Config, redisOpt asynq.RedisClientOpt, store db.Store) {
+func runTaskProcessor(config util.Config, redisOpt asynq.RedisClientOpt, store db.Store, media media.Handler) {
 	mailer := mail.NewGmailSender(config.EmailSenderName, config.EmailSenderAddress, config.EmailSenderPassword)
-	taskProcessor = worker.NewRedisTaskProcessor(redisOpt, store, mailer)
+	taskProcessor = worker.NewRedisTaskProcessor(redisOpt, store, mailer, media)
 	log.Info().Msg("start task processor")
 	err := taskProcessor.Start()
 	if err != nil {

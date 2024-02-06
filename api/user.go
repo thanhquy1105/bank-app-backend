@@ -34,6 +34,7 @@ type userResponse struct {
 	Email             string    `json:"email"`
 	PasswordChangedAt time.Time `json:"password_changed_at"`
 	CreatedAt         time.Time `json:"created_at"`
+	Avatar            string    `json:"avatar_url"`
 }
 
 func newUserResponse(user db.User) userResponse {
@@ -43,6 +44,7 @@ func newUserResponse(user db.User) userResponse {
 		Email:             user.Email,
 		PasswordChangedAt: user.PasswordChangedAt,
 		CreatedAt:         user.CreatedAt,
+		Avatar:            user.Avatar,
 	}
 }
 
@@ -293,6 +295,21 @@ func (server *Server) updateAvatar(ctx *gin.Context) {
 		}
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
+	}
+
+	oldAvatar := ctx.Request.FormValue("old_avatar")
+	if oldAvatar != "" {
+		taskPayload := &worker.PayloadDeleteOldAvatar{
+			Location: filepath.Base(oldAvatar),
+		}
+
+		opts := []asynq.Option{
+			asynq.MaxRetry(5),
+			asynq.ProcessIn(10 * time.Second),
+			asynq.Queue(worker.QueueCritical),
+		}
+
+		server.taskDistributor.DistributeTaskDeleteOldAvatar(ctx, taskPayload, opts...)
 	}
 
 	ctx.JSON(http.StatusOK, txResult)

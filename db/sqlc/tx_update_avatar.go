@@ -15,7 +15,7 @@ type UpdateAvatarTxParams struct {
 }
 
 type UpdateAvatarTxResult struct {
-	Avatar string `json:"avatar"`
+	Avatar string `json:"avatar_url"`
 }
 
 // UpdateAvatarTx performs upload avatar file image to filesys or s3.

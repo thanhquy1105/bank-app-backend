@@ -8,6 +8,8 @@
 *.so
 *.dylib
 realconfig.env
+app-media.env
+github.txt
 
 # Test binary, built with `go test -c`
 *.test

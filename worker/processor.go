@@ -8,6 +8,7 @@ import (
 	"github.com/rs/zerolog/log"
 	db "github.com/thanhquy1105/simplebank/db/sqlc"
 	"github.com/thanhquy1105/simplebank/mail"
+	"github.com/thanhquy1105/simplebank/media"
 )
 
 const (
@@ -25,9 +26,10 @@ type RedisTaskProcessor struct {
 	server *asynq.Server
 	store  db.Store
 	mailer mail.EmailSender
+	media  media.Handler
 }
 
-func NewRedisTaskProcessor(redisOpt asynq.RedisClientOpt, store db.Store, mailer mail.EmailSender) TaskProcessor {
+func NewRedisTaskProcessor(redisOpt asynq.RedisClientOpt, store db.Store, mailer mail.EmailSender, media media.Handler) TaskProcessor {
 	logger := NewLogger()
 	redis.SetLogger(logger)
 
@@ -50,6 +52,7 @@ func NewRedisTaskProcessor(redisOpt asynq.RedisClientOpt, store db.Store, mailer
 		server: server,
 		store:  store,
 		mailer: mailer,
+		media:  media,
 	}
 }
 
@@ -57,6 +60,7 @@ func (processor *RedisTaskProcessor) Start() error {
 	mux := asynq.NewServeMux()
 
 	mux.HandleFunc(TaskSendVerifyEmail, processor.ProcessTaskSendVerifyEmail)
+	mux.HandleFunc(TaskDeleteOldAvatar, processor.ProcessDeleteOldAvatar)
 	return processor.server.Start(mux)
 }
 

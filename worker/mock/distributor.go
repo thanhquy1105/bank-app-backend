@@ -52,6 +52,25 @@ func (mr *MockTaskDistributorMockRecorder) Close() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockTaskDistributor)(nil).Close))
 }
 
+// DistributeTaskDeleteOldAvatar mocks base method.
+func (m *MockTaskDistributor) DistributeTaskDeleteOldAvatar(arg0 context.Context, arg1 *worker.PayloadDeleteOldAvatar, arg2 ...asynq.Option) error {
+	m.ctrl.T.Helper()
+	varargs := []any{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "DistributeTaskDeleteOldAvatar", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DistributeTaskDeleteOldAvatar indicates an expected call of DistributeTaskDeleteOldAvatar.
+func (mr *MockTaskDistributorMockRecorder) DistributeTaskDeleteOldAvatar(arg0, arg1 any, arg2 ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DistributeTaskDeleteOldAvatar", reflect.TypeOf((*MockTaskDistributor)(nil).DistributeTaskDeleteOldAvatar), varargs...)
+}
+
 // DistributeTaskSendVerifyEmail mocks base method.
 func (m *MockTaskDistributor) DistributeTaskSendVerifyEmail(arg0 context.Context, arg1 *worker.PayloadSendVerifyEmail, arg2 ...asynq.Option) error {
 	m.ctrl.T.Helper()
