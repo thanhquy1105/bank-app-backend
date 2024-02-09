@@ -21,6 +21,7 @@ import (
 	"github.com/thanhquy1105/simplebank/gapi"
 	"github.com/thanhquy1105/simplebank/mail"
 	"github.com/thanhquy1105/simplebank/media"
+	_ "github.com/thanhquy1105/simplebank/media/fs"
 	_ "github.com/thanhquy1105/simplebank/media/s3"
 	"github.com/thanhquy1105/simplebank/pb"
 	"github.com/thanhquy1105/simplebank/util"

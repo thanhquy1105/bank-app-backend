@@ -66,7 +66,7 @@ func (fh *fshandler) Upload(filename string, file io.ReadSeeker) (string, int64,
 // Delete deletes files from storage by provided slice of locations.
 func (fh *fshandler) Delete(locations []string) error {
 	for _, loc := range locations {
-		if err, _ := os.Remove(loc).(*os.PathError); err != nil {
+		if err, _ := os.Remove(fh.fileUploadLocation + "/" + loc).(*os.PathError); err != nil {
 			if err != os.ErrNotExist {
 				log.Error().Msg(fmt.Sprintln("fs: error deleting file: ", loc, err))
 			}
