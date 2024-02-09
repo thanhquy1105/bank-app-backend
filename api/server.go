@@ -1,17 +1,21 @@
 package api
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
+	"github.com/rs/zerolog/log"
 	db "github.com/thanhquy1105/simplebank/db/sqlc"
 	"github.com/thanhquy1105/simplebank/media"
 	"github.com/thanhquy1105/simplebank/token"
 	"github.com/thanhquy1105/simplebank/util"
 	"github.com/thanhquy1105/simplebank/worker"
+	"golang.org/x/sync/errgroup"
 )
 
 // Server serves HTTP requests for our banking service.
@@ -69,12 +73,39 @@ func (server *Server) setupRouter() {
 }
 
 // Start runs the HTTP server on a specific address
-func (server *Server) Start(address string) error {
+func (server *Server) Start(ctx context.Context, waitGroup *errgroup.Group, address string) error {
 	srv := &http.Server{
 		Addr:    address,
 		Handler: server.router,
 	}
-	return srv.ListenAndServe()
+	var err error
+	waitGroup.Go(func() error {
+		err = srv.ListenAndServe()
+		if err != nil {
+			if errors.Is(err, http.ErrServerClosed) {
+				return nil
+			}
+			log.Fatal().Msg("RESTFUL API server failed to serve")
+			return err
+		}
+		log.Info().Msgf("RESTFUL API server server at %s", address)
+		return nil
+	})
+
+	waitGroup.Go(func() error {
+		<-ctx.Done()
+		log.Info().Msg("graceful shutdown RESTFUL API server")
+
+		err = srv.Shutdown(context.Background())
+		if err != nil {
+			log.Error().Err(err).Msg("failed to shutdown RESTFUL API server")
+			return err
+		}
+		log.Info().Msg("RESTFUL API server is stopped")
+		return nil
+	})
+
+	return err
 }
 
 func errorResponse(err error) gin.H {
